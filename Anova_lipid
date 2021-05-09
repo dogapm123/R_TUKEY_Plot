@@ -2,19 +2,16 @@ library(tidyverse)
 library(palmerpenguins)
 
 
-
+Book2$groups <- as.factor(Book2$groups)
 
 
 
 dat =Book2[ c("groups", "TAG")]
 
 
-dat <- as.factor(dat)
 
 summary(dat)
-library (tibble)
-data <-as_tibble (dat)%>%
-  mutate (groups = factor (groups))
+
 
 ggplot(dat) +
   aes(x = groups, y = TAG, color = groups) +
@@ -178,10 +175,10 @@ y <- which(
 )
 method1 <- "anova" # one of "anova" or "kruskal.test"
 method2 <- "t.test" # one of "wilcox.test" or "t.test"
-my_comparisons <- list(c("Chinstrap", "Adelie"), c("Gentoo", "Adelie"), c("Gentoo", "Chinstrap")) # comparisons for post-hoc tests
+my_comparisons <- list(c("diet", "diet2"), c("diet3", "diet2"), c("diet", "diet3")) # comparisons for post-hoc tests
 # Edit until here
 
-# Edit at your own risk
+
 library(ggpubr)
 for (i in y) {
   for (j in x) {
