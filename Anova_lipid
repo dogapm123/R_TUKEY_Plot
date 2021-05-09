@@ -1,0 +1,203 @@
+library(tidyverse)
+library(palmerpenguins)
+
+
+
+
+
+
+dat =Book2[ c("groups", "TAG")]
+
+
+dat <- as.factor(dat)
+
+summary(dat)
+library (tibble)
+data <-as_tibble (dat)%>%
+  mutate (groups = factor (groups))
+
+ggplot(dat) +
+  aes(x = groups, y = TAG, color = groups) +
+  geom_jitter() +
+  theme(legend.position = "none")
+
+ res_aov <- aov(TAG ~ groups,
+               data = dat
+)
+
+par(mfrow = c(1, 2)) # combine plots
+
+# histogram
+hist(res_aov$residuals)
+
+# QQ-plot
+library(car)
+qqPlot(res_aov$residuals,
+       id = FALSE # id = FALSE to remove point identification
+)
+
+shapiro.test(res_aov$residuals)
+###P-value of the Shapiro-Wilk test on the residuals is larger than the usual significance level of α=5%, so we do not reject the hypothesis that residuals follow a normal distribution (p-value = 0.261).
+
+boxplot(TAG ~ groups,
+        data = dat
+)
+
+# Dotplot
+library("lattice")
+
+dotplot(TAG ~ groups,
+        data = dat
+)
+
+# Levene's test H0: variances are equal          H1: at least one variance is different
+library(car)
+
+leveneTest(TAG ~ groups,
+           data = dat
+)
+
+
+
+
+
+
+
+
+library(ggplot2)
+
+ggplot(dat) +
+  aes(x = groups, y = TAG) +
+  geom_boxplot()
+
+
+
+
+#means
+aggregate(TAG ~ groups,
+          data = dat,
+          function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+
+
+
+# 1st method:
+oneway.test(TAG ~ groups,
+            data = dat,
+            var.equal = TRUE # assuming equal variances
+)
+
+# 2nd method:
+res_aov <- aov(TAG ~ groups,
+               data = dat
+)
+
+summary(res_aov)
+
+
+#Given that the p-value is smaller than 0.05, we reject the null hypothesis, so we reject the hypothesis that all means are equal. Therefore, we can conclude that at least one groups is different than the others in terms of flippers length (p-value < 2.2e-16).
+
+library("report")
+report(res_aov)
+
+
+
+###Post hoc test
+
+
+library(multcomp)
+
+
+# Tukey HSD test:
+post_test <- glht(res_aov,
+                  linfct = mcp(groups = "Tukey")
+)
+
+summary(post_test)
+
+#All three ajusted p-values are smaller than 0.05, so we reject the null hypothesis for all comparisons, which means that all groups are significantly different in terms of flippers length.
+
+
+
+
+par(mar = c(3, 8, 3, 3))
+plot(post_test)
+
+#another method
+TukeyHSD(res_aov)
+
+#Dunnett’s test
+
+
+
+library(multcomp)
+
+# Dunnett's test:
+post_test <- glht(res_aov,
+                  linfct = mcp(groups = "Dunnett")
+)
+
+summary(post_test)
+
+
+#Both adjusted p-values (displayed in the last column) are below 0.05, so we reject the null hypothesis for both comparisons. This means that both the groups Chinstrap and Gentoo are significantly different from the reference groups Adelie in terms of flippers length. (Nothing can be said about the comparison between Chinstrap and Gentoo though.)
+
+par(mar = c(3, 8, 3, 3))
+plot(post_test)
+
+# Change reference category:
+dat$groups <- relevel(dat$groups, ref = "Gentoo")
+
+# Check that Gentoo is the reference category:
+levels(dat$groups)
+
+res_aov2 <- aov(TAG ~ groups,
+                data = dat
+)
+
+
+# Dunnett's test:
+post_test <- glht(res_aov2,
+                  linfct = mcp(groups = "Dunnett")
+)
+
+summary(post_test)
+
+
+
+
+par(mar = c(3, 8, 3, 3))
+plot(post_test)
+
+#Visualization
+# Edit from here
+x <- which(names(dat) == "groups") # name of grouping variable
+y <- which(
+  names(dat) == "TAG" # names of variables to test
+)
+method1 <- "anova" # one of "anova" or "kruskal.test"
+method2 <- "t.test" # one of "wilcox.test" or "t.test"
+my_comparisons <- list(c("Chinstrap", "Adelie"), c("Gentoo", "Adelie"), c("Gentoo", "Chinstrap")) # comparisons for post-hoc tests
+# Edit until here
+
+# Edit at your own risk
+library(ggpubr)
+for (i in y) {
+  for (j in x) {
+    p <- ggboxplot(dat,
+                   x = colnames(dat[j]), y = colnames(dat[i]),
+                   color = colnames(dat[j]),
+                   legend = "none",
+                   palette = "npg",
+                   add = "jitter"
+    )
+    print(
+      p + stat_compare_means(aes(label = paste0(..method.., ", p-value = ", ..p.format..)),
+                             method = method1, label.y = max(dat[, i], na.rm = TRUE)
+      )
+      + stat_compare_means(comparisons = my_comparisons, method = method2, label = "p.format") # remove if p-value of ANOVA or Kruskal-Wallis test >= alpha
+    )
+  }
+}
+
