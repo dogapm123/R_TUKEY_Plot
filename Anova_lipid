@@ -1,5 +1,5 @@
 library(tidyverse)
-library(palmerpenguins)
+
 
 
 Book2$groups <- as.factor(Book2$groups)
