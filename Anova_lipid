@@ -1,12 +1,13 @@
+
+
 library(tidyverse)
 
 
-
-Book2$groups <- as.factor(Book2$groups)
-
+TAGG_1_$groups <- as.factor(TAGG_1_$groups)
 
 
-dat =Book2[ c("groups", "TAG")]
+
+dat =TAGG_1_[ c("groups", "TAG")]
 
 
 
@@ -18,7 +19,7 @@ ggplot(dat) +
   geom_jitter() +
   theme(legend.position = "none")
 
- res_aov <- aov(TAG ~ groups,
+res_aov <- aov(TAG ~ groups,
                data = dat
 )
 
@@ -144,7 +145,7 @@ par(mar = c(3, 8, 3, 3))
 plot(post_test)
 
 # Change reference category:
-dat$groups <- relevel(dat$groups, ref = "Gentoo")
+dat$groups <- relevel(dat$groups, ref = "3-C")
 
 # Check that Gentoo is the reference category:
 levels(dat$groups)
@@ -175,7 +176,7 @@ y <- which(
 )
 method1 <- "anova" # one of "anova" or "kruskal.test"
 method2 <- "t.test" # one of "wilcox.test" or "t.test"
-my_comparisons <- list(c("diet", "diet2"), c("diet3", "diet2"), c("diet", "diet3")) # comparisons for post-hoc tests
+my_comparisons <- list(c("3-Ca", "3-C"), c("3-S", "3-C"), c("3-SO", "3-C"),c("3-V", "3-C"))#, c("5-Ca", "5-C"), c("5-S", "5-C"),c("5-SO", "5-C"), c("5-V", "5-C")) # comparisons for post-hoc tests
 # Edit until here
 
 
@@ -190,11 +191,10 @@ for (i in y) {
                    add = "jitter"
     )
     print(
-      p + stat_compare_means(aes(label = paste0(..method.., ", p-value = ", ..p.format..)),
-                             method = method1, label.y = max(dat[, i], na.rm = TRUE)
-      )
+      p 
       + stat_compare_means(comparisons = my_comparisons, method = method2, label = "p.format") # remove if p-value of ANOVA or Kruskal-Wallis test >= alpha
     )
   }
 }
+
 
