@@ -1,0 +1,247 @@
+library(multcompView)
+TAGG_1_$Diet <- as.factor(TAGG_1_$Diet) # xlsx file
+
+
+
+library(ggplot2)
+
+# library
+library(multcompView)
+
+
+
+# What is the effect of the Diet on the value ?
+model=lm( TAGG_1_$TAG ~ TAGG_1_$Diet )
+ANOVA=aov(model)
+
+# Tukey test to study each pair of Diet :
+TUKEY <- TukeyHSD(x=ANOVA, 'TAGG_1_$Diet', conf.level=0.95)
+
+# Tuckey test representation :
+plot(TUKEY , las=1 , col="brown")
+
+# I need to group the Diets that are not different each other together.
+generate_label_df <- function(TUKEY, variable){
+  
+  # Extract labels and factor levels from Tukey post-hoc 
+  Tukey.levels <- TUKEY[[variable]][,4]
+  Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
+  
+  #I need to put the labels in the same order as in the boxplot :
+  Tukey.labels$Diet=rownames(Tukey.labels)
+  Tukey.labels=Tukey.labels[order(Tukey.labels$Diet) , ]
+  return(Tukey.labels)
+}
+
+# Apply the function on my dataset
+LABELS <- generate_label_df(TUKEY , "TAGG_1_$Diet")
+
+#COLOR
+x <- rep(1:5, each=5)
+y <- rnorm(5*7)
+
+
+# Draw the basic boxplot
+a <- boxplot(TAGG_1_$TAG ~ TAGG_1_$Diet , ylim=c(min(TAGG_1_$TAG) , 1.1*max(TAGG_1_$TAG)),col="gray", ylab="TAG (mg / 100 mg)" ,xlab="Diet", main="3rd instar") #For color replace gray with col=rainbow(length(unique(x)))
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.1*max( a$stats[nrow(a$stats),] )
+
+#Add the labels
+text( c(1:nlevels(TAGG_1_$Diet)) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col="black"[as.numeric(LABELS[,1])] )
+
+res_aov <- aov(TAG ~ Diet,
+               data = TAGG_1_
+)
+
+# 1st method:
+oneway.test(TAG ~ Diet,
+            data = TAGG_1_
+            var.equal = TRUE # assuming equal variances
+#Add jitter
+stripchart(TAGG_1_$TAG ~ TAGG_1_$Diet, vertical = TRUE, data = data, 
+           method = "jitter", add = TRUE, pch = 20, col = 'Black')
+
+
+
+
+
+
+
+
+
+            
+  summary(res_aov)
+library(multcomp)            
+post_test <- glht(res_aov,
+                  linfct = mcp(Diet = "Tukey")
+)
+
+summary(post_test)
+
+library(ggplot2)
+
+
+
+#Barplot
+library(ggplot2)
+library(grid)
+library(fBasics)
+library(tidyr)
+library(reshape2)
+library(agricolae)
+library(Rmisc)
+library(gdata)
+library(rlist)
+library(stringr)
+
+
+###################################################################################
+# Tukey plot significance function
+###################################################################################
+tukey_plot_significance<-function(data)
+{
+  
+  ##Convert 0 values to NA values
+  data[data == 0] <- NA
+  data_melted <- reshape2::melt(data)   
+  colnames(data_melted)[1] = 'X'
+  stats <- summarySE(data_melted, measurevar="value", groupvars=c("X","variable"), na.rm=TRUE)
+  names(stats)[1]<-"group"
+  
+  # ANOVA + Tukey test + statistics (mean,sd,SEM...)
+  variable_list <- split(data_melted, f= data_melted$X)
+  aov <- lapply(variable_list, function(x) aov(value~variable, data = x ))
+  stats_data <- lapply(variable_list, function(x) summarySE(x, measurevar="value", groupvars=c("variable"),na.rm=TRUE) )
+  tukey <- lapply(aov, function(x) HSD.test(x,"variable",group=FALSE))
+  tukey_groups <- lapply(aov, function (x) HSD.test(x,"variable"))
+  
+  ##Tukey test with letter groups
+  ##Loop to extract data groups, names, and x & y positions for plotting
+  stats_data <- lapply(stats_data, function(x) {x$ymax <-x$value + x$se;
+  row.names(x) <- x$variable;
+  return(x)})
+  
+  tukey_letters <- lapply(tukey_groups, function(x) x$groups)
+  tukey_letters <- mapply(function(x, y) merge(x, y, by=0) , tukey_letters, stats_data, SIMPLIFY = FALSE)
+  tukey_letters <- mapply(function(x, y) {y$xpos <- match( y$variable, x[,1]); return(y)}, stats_data, tukey_letters , SIMPLIFY = FALSE)
+  
+  
+  ### Another way to compare our data statistically with tukey test is with asterisks. 
+  ## We are going to create a data frame of each experimental condition desired where 
+  ## p-value and asterisks will appear and their relation with x position and y position between the
+  ## two groups compared. On this way, we are going to be able to draw a segment or path connecting both bars in our bar plot 
+  ## or as many as we want/have.
+  
+  
+  
+  ast <- lapply(tukey, function(x) subset(x$comparison, signif. != " "))
+  asterisks <- lapply(ast, function(x) cbind(x, 
+                                             setNames(object= data.frame(str_split_fixed(rownames(x)," - ",2)), c("g1", "g2"))) )
+  asterisks1<-asterisks
+  path <- mapply( function(x, y) {x$x1 <- y[match(x$g1, y$variable), "xpos"]; return(x)},
+                  asterisks,
+                  tukey_letters,
+                  SIMPLIFY = FALSE)
+  path <- mapply( function(x, y) {x$x2 <- y[match(x$g2, y$variable), "xpos"]; return(x)},
+                  path,
+                  tukey_letters,
+                  SIMPLIFY = FALSE)
+  
+  path <- mapply( function(x, y) {x$y1 <- y[match(x$g1, y$variable), "value.x"]; return(x)},
+                  path,
+                  tukey_letters,
+                  SIMPLIFY = FALSE)
+  path <- mapply( function(x, y) {x$y2 <- y[match(x$g2, y$variable), "value.x"]; return(x)},
+                  path,
+                  tukey_letters,
+                  SIMPLIFY = FALSE)
+  path <- lapply( path, function(x) {x$xmed <- as.numeric(rowMeans(x[,c("x1", "x2")])) ; return(x)})
+  
+  path <- mapply( function(x, y) {x$ymax <- rowMaxs(x[,c("y1","y2")])+ max(y$se); return(x)},
+                  path,
+                  tukey_letters,
+                  SIMPLIFY = FALSE)
+  df_path = melt(path, id.vars= names(path[[1]]))
+  df_tukey_letters = melt(tukey_letters, id.vars= names(tukey_letters[[1]]))
+  
+  ## To manipulate the resultant list (asterisks) we're going to change the name to "path". This data will be 
+  ## used for geom_segment() in ggplot 
+  
+  
+  #Resultant list has different data frames depending on the number of conditions. 
+  # Each data frame holds the following information: 
+  #    - sig.=asterisks 
+  #    - xmed=place to set the asterirsks, in the halfway between two compared groups
+  #    - ymax= max position of bar + position of erro bar, x1=x,x2=xend,y1=y,y2=yend are coordenates for geom_segment())
+  #
+  
+  # 
+  result <- list(data_melt = data_melted,
+                 aov = aov,
+                 summary.aov = summary(aov),
+                 tukey_letters = df_tukey_letters,
+                 stats = stats,
+                 stats_groups = stats_data,
+                 asterisks = asterisks,
+                 geom.path = df_path)
+  return(result) 
+} 
+
+
+
+##################################################################################################
+
+save("tukey_plot_significance", file="tukeySignificanceLettersFunction.Rdata")
+
+
+##################################################################################################
+
+
+
+
+load("tukeySignificanceLettersFunction.Rdata")
+
+
+###################################################################################
+data_example <- read.table("./tag4.csv", sep =",", header=T) #csv data
+
+significance<-tukey_plot_significance(data_example) 
+
+# Extract letters positions
+tukey_letters<-significance$tukey_letters
+stats<-significance$stats
+
+# Set asteriks position (so it won't fall on top of the error bars)
+offset<-7
+
+offset_asterisk<-3 # Adjust the Y axis maximum
+
+plot<- ggplot( tukey_letters, aes(x = variable, y = value.x)) + 
+  geom_bar(stat = "identity", position =position_dodge(),colour="black",width=.7,size=.5)+ 
+  geom_errorbar(aes(ymin=value.x-se, ymax=value.x+se), width=.1,size=.5,position=position_dodge(.7))+
+  geom_line(size=.8)+
+  theme(
+    plot.title = element_text(lineheight=.8, face="bold",size=40),
+    axis.title = element_text(size =15, face="bold"),
+    axis.text = element_text(angle=0, vjust=1,size=15,face="bold"),
+    axis.ticks = element_line(size = rel(2.5)),
+    axis.ticks.length = unit(0.5, "cm")
+  )+
+  labs(
+    title="5th instar",
+    x="",
+    y="TAG (mg / 100 mg)"
+  )+
+  
+  geom_text(data =tukey_letters, 
+            aes(x=xpos, y=ymax+offset_asterisk,label=groups), 
+            size = 5,position=position_dodge(.5)
+  )
+plot
+
+
+
+
+
+
