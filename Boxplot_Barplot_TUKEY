@@ -127,12 +127,7 @@ tukey_plot_significance<-function(data)
   tukey_letters <- mapply(function(x, y) {y$xpos <- match( y$variable, x[,1]); return(y)}, stats_data, tukey_letters , SIMPLIFY = FALSE)
   
   
-  ### Another way to compare our data statistically with tukey test is with asterisks. 
-  ## We are going to create a data frame of each experimental condition desired where 
-  ## p-value and asterisks will appear and their relation with x position and y position between the
-  ## two groups compared. On this way, we are going to be able to draw a segment or path connecting both bars in our bar plot 
-  ## or as many as we want/have.
-  
+
   
   
   ast <- lapply(tukey, function(x) subset(x$comparison, signif. != " "))
