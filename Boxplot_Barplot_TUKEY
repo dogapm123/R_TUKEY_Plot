@@ -227,14 +227,11 @@ plot<- ggplot( tukey_letters, aes(x = variable, y = value.x)) +
   geom_bar(stat = "identity", position =position_dodge(),colour="black",width=.7,size=.5)+ 
   geom_errorbar(aes(ymin=value.x-se, ymax=value.x+se), width=.1,size=.5,position=position_dodge(.7))+
   geom_line(size=.8)+
-  theme_light(
-    base_size = 20,
-    base_family = "",
-    base_line_size = base_size/22,
-    base_rect_size = base_size/22
+  theme_classic(
+    
   )+
   scale_y_continuous(expand = c(0,0))+
-  coord_cartesian(ylim = c(0, 8))+
+  coord_cartesian(ylim = c(0, 15))+
   
   
   theme(
@@ -245,9 +242,9 @@ plot<- ggplot( tukey_letters, aes(x = variable, y = value.x)) +
     axis.ticks.length = unit(0.5, "cm")
   )+
   labs(
-    title="3rd instar",
+    title="5th instar",
     x="",
-    y="Trehalose (mg / 100 mg)"
+    y="Triglyceride (mg / 100 mg)"
   )+
   
   geom_text(data =tukey_letters, 
