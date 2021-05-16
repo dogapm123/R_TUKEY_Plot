@@ -1,6 +1,6 @@
 library(multcompView)
 Trehaloz_1_$Diet <- as.factor(Trehaloz_1_$Diet)
-
+TAGG_1_ <- Trehaloz_1_
 
 
 library(ggplot2)
@@ -54,25 +54,18 @@ res_aov <- aov(TAG ~ Diet,
                data = TAGG_1_
 )
 
-# 1st method:
-oneway.test(TAG ~ Diet,
-            data = TAGG_1_
-            var.equal = TRUE # assuming equal variances
-#Add jitter
-stripchart(TAGG_1_$TAG ~ TAGG_1_$Diet, vertical = TRUE, data = data, 
-           method = "jitter", add = TRUE, pch = 20, col = 'Black')
 
 
 
 
 
 
-
-
-
+library("report")
             
   summary(res_aov)
-library(multcomp)            
+  report(res_aov)
+
+  library(multcomp)            
 post_test <- glht(res_aov,
                   linfct = mcp(Diet = "Tukey")
 )
