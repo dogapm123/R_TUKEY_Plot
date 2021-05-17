@@ -75,6 +75,10 @@ post_test <- glht(res_aov,
 
 summary(post_test)
 
+#Add jitter
+stripchart(TAGG_1_$TAG ~ TAGG_1_$Diet, vertical = TRUE, data = TAGG_1_, 
+           method = "jitter", add = TRUE, pch = 20, col = 'Black')
+
 library(ggplot2)
 
 
